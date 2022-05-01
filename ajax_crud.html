@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<!-- working file that sends requests to the api-->
+<html>
+	<head>
+		<title>Exetel</title>
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" />
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+	</head>
+	<body>
+		<div class="container">
+			<br />
+			<h3 align="center">REST API in PHP with CRUD Operations</h3>
+			<br />
+			<div align="right" style="margin-bottom:5px;">
+				<button type="button" name="add_button" id="add_button" class="btn btn-success btn-xs">Add</button>
+			</div>
+			
+			<!-- displaying the data in an HTML table format-->
+			<div class="table-responsive">
+				<table class="table table-bordered table-striped">
+					<thead>
+						<tr>
+                            <th>ID</th>
+							<th>First Name</th>
+							<th>Last Name</th>
+                            <th>Age</th>
+                            <th>DOB</th>
+                            <th>Email</th>
+                            <th>Creation date</th>
+							<th>Actions</th>
+						</tr>
+					</thead>
+					<tbody></tbody> <!-- to display sample data rows-->
+				</table>
+			</div>
+		</div>
+	</body>
+</html>
+
+<div id="apicrudModal" class="modal fade" role="dialog">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<form method="post" id="api_crud_form">
+				<div class="modal-header">
+		        	<button type="button" class="close" data-dismiss="modal">&times;</button>
+		        	<h4 class="modal-title">Add Data</h4>
+		      	</div>
+		      	<div class="modal-body">
+		      		<div class="form-group">
+			        	<label>Enter First Name</label>
+			        	<input type="text" name="first_name" id="first_name" class="form-control" />
+			        </div>
+			        <div class="form-group">
+			        	<label>Enter Last Name</label>
+			        	<input type="text" name="last_name" id="last_name" class="form-control" />
+			        </div>
+                    <div class="form-group">
+			        	<label>Enter DOB</label>
+			        	<input type="date" name="dob" id="dob" class="form-control" />
+			        </div>	
+                    <div class="form-group">
+			        	<label>Enter age</label>
+			        	<input type="text" name="age" id="age" class="form-control" />
+			        </div>			        		        
+                    <div class="form-group">
+			        	<label>Enter email</label>
+			        	<input type="email" name="email" id="email" class="form-control" />
+			        </div>			        
+			    </div>
+			    <div class="modal-footer">
+			    	<input type="hidden" name="hidden_id" id="hidden_id" />
+			    	<input type="hidden" name="action" id="action" value="insert" />
+			    	<input type="submit" name="button_action" id="button_action" class="btn btn-info" value="Insert" />
+			    	<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+	      		</div>
+			</form>
+		</div>
+  	</div>
+</div>
+<!-- fetching latest data from the table-->
+<script type="text/javascript">
+    $(document).ready(function() {
+        $.getJSON('http://localhost/Exetel_Development/read.php', function(json) {
+            var tr=[];
+            for (var i = 0; i < json.length; i++) {
+                tr.push('<tr>');
+                tr.push('<td>' + json[i].id + '</td>');
+                tr.push('<td>' + json[i].first_name + '</td>');
+                tr.push('<td>' + json[i].last_name + '</td>');
+                tr.push('<td>' + json[i].dob + '</td>');
+                tr.push('<td>' + json[i].age + '</td>');
+                tr.push('<td>' + json[i].email + '</td>');
+                tr.push('<td>' + json[i].creation_date + '</td>');
+                tr.push('<td><button class="btn btn-warning btn-xs edit">Edit</button>&nbsp;&nbsp;<button class="btn btn-danger btn-xs delete" id=' + json[i].id + '>Delete</button></td>');
+                tr.push('</tr>');
+            }
+            $('table').append($(tr.join('')));
+        });
+
+        //jquery code to bring upon clicking the add button 
+	    $('#add_button').click(function(){
+		$('#action').val('insert');
+		$('#button_action').val('Insert');
+		$('.modal-title').text('Add Data');
+		$('#apicrudModal').modal('show');
+	});
+        //jquery code to be manipulated upon form submission
+        $('#api_crud_form').on('submit', function(event){
+            event.preventDefault();
+            
+            var first_name = $('#first_name').val();
+            var last_name = $('#last_name').val();
+            var dob = $('#dob').val();
+            var age = $('#age').val();
+            var email = $('#email').val();
+            
+            if(first_name == null || first_name == "") {
+                alert("First Name is required");
+                return;
+            }
+            if(last_name == null || last_name == "") {
+                alert("Last Name is required");
+                return;
+            }
+            if(dob == null || dob == "") {
+                alert("DOB is required");
+                return;
+            }
+            if(age == null || age == "") {
+                alert("Age is required");
+                return;
+            }
+            if(email == null || email == "") {
+                alert("Email is required");
+                return;
+            }
+            
+            $.ajax({
+                type: "POST",
+                contentType: "application/json; charset=utf-8",
+                url: "http://localhost/Exetel_Development/create.php",//sending request to create.php
+                data: JSON.stringify({'first_name': first_name,'last_name': last_name,'dob': dob,'age': age, 'email': email}),//defining which data to be sent to the server
+                cache: false,
+                success: function(result) {
+                    alert('customer added successfully');
+                    location.reload(true);
+                },
+                error: function(err) {
+                    alert(err);
+                }
+            });
+        });
+        
+        //executed upon clicking on the delete button
+        $(document).delegate('.delete', 'click', function() { 
+            if (confirm('Do you really want to delete record?')) {
+                var id = $(this).attr('id');
+                var parent = $(this).parent().parent();
+                $.ajax({
+                    type: "DELETE",
+                    url: "http://localhost/Exetel_Development/delete.php?id=" + id,
+                    cache: false,
+                    success: function() {
+                        parent.fadeOut('slow', function() {
+                            $(this).remove();
+                        });
+                        location.reload(true)
+                    },
+                    error: function() {
+                        alert('Error deleting record');
+                    }
+                });
+            }
+        });
+        
+        //executed upon clicking on the edit button
+        $(document).delegate('.edit', 'click', function() {
+            var parent = $(this).parent().parent();
+            
+            var id = parent.children("td:nth-child(1)");
+            var first_name = parent.children("td:nth-child(2)");
+            var last_name = parent.children("td:nth-child(3)");
+            var dob = parent.children("td:nth-child(4)");
+            var age = parent.children("td:nth-child(5)");
+            var email = parent.children("td:nth-child(6)");
+            var creation_date = parent.children("td:nth-child(7)");
+            var buttons = parent.children("td:nth-child(8)");
+            
+            first_name.html("<input type='text' id='first_name' value='" + first_name.html() + "'/>");
+            last_name.html("<input type='text' id='last_name' value='" + last_name.html() + "'/>");
+            dob.html("<input type='date' id='dob' value='" + dob.html() + "'/>");
+            age.html("<input type='text' id='age' value='" + age.html() + "'/>");
+            email.html("<input type='email' id='email' value='" + email.html() + "'/>");
+            buttons.html("<button class='btn btn-warning btn-xs save' id='save'>Save</button>&nbsp;&nbsp;<button class='btn btn-danger btn-xs delete' id='" + id.html() + "'>Delete</button>");
+        });
+        
+        $(document).delegate('#save', 'click', function() {
+            var parent = $(this).parent().parent();
+            
+            var id = parent.children("td:nth-child(1)");
+            var first_name = parent.children("td:nth-child(2)");
+            var last_name = parent.children("td:nth-child(3)");
+            var dob = parent.children("td:nth-child(4)");
+            var age = parent.children("td:nth-child(5)");
+            var email = parent.children("td:nth-child(6)");
+            var creation_date = parent.children("td:nth-child(7)");
+            var buttons = parent.children("td:nth-child(8)");
+            
+            $.ajax({
+                type: "PUT",
+                contentType: "application/json; charset=utf-8",
+                url: "http://localhost/Exetel_Development/update.php",
+                data: JSON.stringify({'id' : id.html(), 'first_name' : first_name.children("input[type=text]").val(), 'last_name' : last_name.children("input[type=text]").val(), 'dob' : dob.children("input[type=date]").val(), 'age' : age.children("input[type=text]").val(), 'email' : email.children("input[type=email]").val()}),
+                cache: false,
+                success: function() {
+                    first_name.html(first_name.children("input[type=text]").val());
+                    last_name.html(last_name.children("input[type=text]").val());
+                    dob.html(dob.children("input[type=date]").val());
+                    age.html(age.children("input[type=text]").val());
+                    email.html(email.children("input[type=email]").val());
+                    buttons.html("<button class='btn btn-warning btn-xs edit' id='" + id.html() + "'>Edit</button>&nbsp;&nbsp;<button class='btn btn-danger btn-xs delete' id='" + id.html() + "'>Delete</button>");
+                },
+                error: function() {
+                    alert('Error updating record');
+                }
+            });
+        });
+
+    });
+</script>
+
+<!-- calculating the age based on the DOB-->
+<script type="text/javascript">
+    $(document).ready(function(){
+
+        $("#dob").change(function(){
+           var value = $("#dob").val();
+            var dob = new Date(value);
+            var today = new Date();
+            var age = Math.floor((today-dob) / (365.25 * 24 * 60 * 60 * 1000));
+            if(isNaN(age)) {
+
+            // will set 0 when value will be NaN
+             age=0;
+
+            }
+            else{
+              age=age;
+            }
+            $('#age').val(age);
+
+        });
+
+    });
+    </script>
